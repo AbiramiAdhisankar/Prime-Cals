@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/calc_bottom_bg">
+
+    <!-- Dual Display Area with Logo and History Button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1.8"
+        android:background="@color/calc_top_bg"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Top Bar: Logo, App Title, History Icon Button -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Calculator"
+                android:textColor="@color/text_dark"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <ImageButton
+                android:id="@+id/btnHistory"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_recent_history"
+                android:contentDescription="View History" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Line 1: Expression (e.g., 65 + 5) -->
+        <TextView
+            android:id="@+id/tvExpression"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:paddingEnd="8dp"
+            android:text=""
+            android:textColor="#757575"
+            android:textSize="22sp" />
+
+        <!-- Line 2: Active Input / Final Result -->
+        <TextView
+            android:id="@+id/tvResult"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:paddingEnd="8dp"
+            android:paddingBottom="8dp"
+            android:text="0"
+            android:textColor="@color/text_dark"
+            android:textSize="38sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Keypad Area -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="2.2"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <!-- Row 1 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnLCM"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_purple"
+                android:text="LCM" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnGCD"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_purple"
+                android:text="GCD" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnC"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_clear"
+                android:text="C" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnAC"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_clear"
+                android:text="AC" />
+        </LinearLayout>
+
+        <!-- Row 2 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnPrime"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_purple"
+                android:text="Prime" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnSqrt"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_purple"
+                android:text="sqrt" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnCbrt"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_purple"
+                android:text="cbrt" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnAdd"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_purple"
+                android:text="+" />
+        </LinearLayout>
+
+        <!-- Row 3 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn1"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_mint"
+                android:text="1" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn2"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_mint"
+                android:text="2" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn3"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_mint"
+                android:text="3" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnSub"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_purple"
+                android:text="-" />
+        </LinearLayout>
+
+        <!-- Row 4 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn4"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_mint"
+                android:text="4" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn5"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_mint"
+                android:text="5" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn6"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_mint"
+                android:text="6" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnMul"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_purple"
+                android:text="x" />
+        </LinearLayout>
+
+        <!-- Row 5 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn7"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_mint"
+                android:text="7" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn8"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_mint"
+                android:text="8" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn9"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_mint"
+                android:text="9" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnDiv"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_purple"
+                android:text="/" />
+        </LinearLayout>
+
+        <!-- Row 6 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnDot"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_mint"
+                android:text="." />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn0"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_mint"
+                android:text="0" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnComma"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_mint"
+                android:text="," />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnEquals"
+                style="@style/CalcButton"
+                android:background="@drawable/bg_btn_equals"
+                android:text="="
+                android:textColor="@color/text_white" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

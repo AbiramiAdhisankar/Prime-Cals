@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="calc_top_bg">#F2EFEF</color>
+    <color name="calc_bottom_bg">#FFFFFF</color>
+    <color name="calc_border">#00E5FF</color>
+    <color name="btn_purple">#D2B4DE</color>
+    <color name="btn_mint">#D4EFDF</color>
+    <color name="btn_teal_equals">#4A7C6E</color>
+    <color name="text_dark">#1F1F1F</color>
+    <color name="text_white">#FFFFFF</color>
+    <color name="btn_coral_clear">#F5B7B1</color>
+</resources>
