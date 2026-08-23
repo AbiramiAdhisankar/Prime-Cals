@@ -4,6 +4,10 @@ A modern, intuitive Android calculator application designed for standard arithme
 
 ---
 
+## 📱 Download APK
+
+[Download Prime Cals APK](https://github.com/AbiramiAdhisankar/Prime-Cals/releases/tag/v2.0.0)
+
 ## ✨ Features
 
 - **Standard Arithmetic**: Addition, subtraction, multiplication, and division with clean decimal formatting.
