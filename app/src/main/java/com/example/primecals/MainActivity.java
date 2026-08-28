@@ -11,16 +11,16 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import java.text.DecimalFormat;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     private TextView tvExpression, tvResult;
-    private StringBuilder currentInput = new StringBuilder();
-    private double firstOperand = 0.0;
-    private String pendingOperation = "";
-    private boolean isNewOp = true;
+    private StringBuilder fullExpression = new StringBuilder();
+    private boolean isEvaluated = false;
     private AppDatabase db;
 
     @Override
@@ -72,22 +72,20 @@ public class MainActivity extends AppCompatActivity {
 
         rvHistory.setLayoutManager(new LinearLayoutManager(this));
         HistoryAdapter adapter = new HistoryAdapter(item -> {
-            currentInput.setLength(0);
-            currentInput.append(item.getResult());
+            fullExpression.setLength(0);
+            fullExpression.append(item.getResult());
             tvResult.setText(item.getResult());
             tvExpression.setText(item.getExpression());
-            isNewOp = true;
+            isEvaluated = true;
             bottomSheetDialog.dismiss();
         });
         rvHistory.setAdapter(adapter);
 
-        // Fetch records from Room DB
         AppDatabase.databaseWriteExecutor.execute(() -> {
             List<CalculationHistory> list = db.historyDao().getAllHistory();
             runOnUiThread(() -> adapter.setData(list));
         });
 
-        // Clear history action
         btnClear.setOnClickListener(v -> {
             triggerHaptic(v);
             AppDatabase.databaseWriteExecutor.execute(() -> {
@@ -109,35 +107,38 @@ public class MainActivity extends AppCompatActivity {
             Button btn = findViewById(id);
             btn.setOnClickListener(v -> {
                 triggerHaptic(v);
-                if (isNewOp) {
-                    currentInput.setLength(0);
-                    isNewOp = false;
+                if (isEvaluated) {
+                    fullExpression.setLength(0);
+                    tvExpression.setText("");
+                    isEvaluated = false;
                 }
-                currentInput.append(btn.getText().toString());
-                tvResult.setText(currentInput.toString());
+                fullExpression.append(btn.getText().toString());
+                tvResult.setText(fullExpression.toString());
             });
         }
 
         findViewById(R.id.btnDot).setOnClickListener(v -> {
             triggerHaptic(v);
-            if (isNewOp) {
-                currentInput.setLength(0);
-                currentInput.append("0");
-                isNewOp = false;
+            if (isEvaluated) {
+                fullExpression.setLength(0);
+                fullExpression.append("0");
+                tvExpression.setText("");
+                isEvaluated = false;
             }
-            if (!currentInput.toString().contains(".")) {
-                if (currentInput.length() == 0) currentInput.append("0");
-                currentInput.append(".");
-                tvResult.setText(currentInput.toString());
+            if (fullExpression.length() == 0 || isOperator(fullExpression.charAt(fullExpression.length() - 1))) {
+                fullExpression.append("0.");
+            } else {
+                fullExpression.append(".");
             }
+            tvResult.setText(fullExpression.toString());
         });
 
         findViewById(R.id.btnComma).setOnClickListener(v -> {
             triggerHaptic(v);
-            if (currentInput.length() > 0 && !currentInput.toString().endsWith(",")) {
-                currentInput.append(",");
-                tvResult.setText(currentInput.toString());
-                isNewOp = false;
+            if (fullExpression.length() > 0 && !fullExpression.toString().endsWith(",")) {
+                fullExpression.append(",");
+                tvResult.setText(fullExpression.toString());
+                isEvaluated = false;
             }
         });
     }
@@ -149,20 +150,26 @@ public class MainActivity extends AppCompatActivity {
             Button btn = findViewById(id);
             btn.setOnClickListener(v -> {
                 triggerHaptic(v);
-                if (currentInput.length() > 0) {
-                    try {
-                        firstOperand = Double.parseDouble(currentInput.toString());
-                        pendingOperation = btn.getText().toString();
-                        tvExpression.setText(formatNumber(firstOperand) + " " + pendingOperation);
-                        isNewOp = true;
-                    } catch (NumberFormatException ignored) {}
+                String op = btn.getText().toString();
+
+                if (fullExpression.length() > 0) {
+                    isEvaluated = false;
+                    char lastChar = fullExpression.charAt(fullExpression.length() - 1);
+
+                    if (isOperator(lastChar)) {
+                        // Replace previous operator if user taps another operator
+                        fullExpression.setCharAt(fullExpression.length() - 1, op.charAt(0));
+                    } else if (lastChar != ',') {
+                        fullExpression.append(op);
+                    }
+                    tvResult.setText(fullExpression.toString());
                 }
             });
         }
 
         findViewById(R.id.btnEquals).setOnClickListener(v -> {
             triggerHaptic(v);
-            calculateResult();
+            calculateFullExpression();
         });
     }
 
@@ -170,9 +177,9 @@ public class MainActivity extends AppCompatActivity {
         // Square Root
         findViewById(R.id.btnSqrt).setOnClickListener(v -> {
             triggerHaptic(v);
-            if (currentInput.length() > 0) {
+            if (fullExpression.length() > 0) {
                 try {
-                    double val = Double.parseDouble(currentInput.toString());
+                    double val = evaluateMathString(fullExpression.toString());
                     String expr = "√(" + formatNumber(val) + ")";
                     tvExpression.setText(expr);
                     if (val < 0) {
@@ -180,10 +187,12 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         double res = Math.sqrt(val);
                         String formattedRes = formatNumber(res);
-                        displayFormattedResult(res);
+                        tvResult.setText(formattedRes);
                         saveHistoryEntry(expr, formattedRes);
+                        fullExpression.setLength(0);
+                        fullExpression.append(formattedRes);
                     }
-                    isNewOp = true;
+                    isEvaluated = true;
                 } catch (Exception e) {
                     tvResult.setText("Error");
                 }
@@ -193,16 +202,18 @@ public class MainActivity extends AppCompatActivity {
         // Cube Root
         findViewById(R.id.btnCbrt).setOnClickListener(v -> {
             triggerHaptic(v);
-            if (currentInput.length() > 0) {
+            if (fullExpression.length() > 0) {
                 try {
-                    double val = Double.parseDouble(currentInput.toString());
+                    double val = evaluateMathString(fullExpression.toString());
                     String expr = "∛(" + formatNumber(val) + ")";
                     tvExpression.setText(expr);
                     double res = Math.cbrt(val);
                     String formattedRes = formatNumber(res);
-                    displayFormattedResult(res);
+                    tvResult.setText(formattedRes);
                     saveHistoryEntry(expr, formattedRes);
-                    isNewOp = true;
+                    fullExpression.setLength(0);
+                    fullExpression.append(formattedRes);
+                    isEvaluated = true;
                 } catch (Exception e) {
                     tvResult.setText("Error");
                 }
@@ -212,16 +223,16 @@ public class MainActivity extends AppCompatActivity {
         // Prime Check
         findViewById(R.id.btnPrime).setOnClickListener(v -> {
             triggerHaptic(v);
-            if (currentInput.length() > 0) {
+            if (fullExpression.length() > 0) {
                 try {
-                    long val = Long.parseLong(currentInput.toString().replace(".", ""));
+                    long val = (long) evaluateMathString(fullExpression.toString());
                     String expr = "isPrime(" + val + ")";
                     tvExpression.setText(expr);
                     boolean prime = isPrime(val);
                     String resStr = prime ? "Prime" : "Not Prime";
                     tvResult.setText(resStr);
                     saveHistoryEntry(expr, resStr);
-                    isNewOp = true;
+                    isEvaluated = true;
                 } catch (Exception e) {
                     tvResult.setText("Error");
                 }
@@ -231,31 +242,13 @@ public class MainActivity extends AppCompatActivity {
         // GCD
         findViewById(R.id.btnGCD).setOnClickListener(v -> {
             triggerHaptic(v);
-            if (currentInput.toString().contains(",")) {
-                calculateCommaSeparatedOperation("GCD");
-            } else if (currentInput.length() > 0) {
-                try {
-                    firstOperand = Double.parseDouble(currentInput.toString());
-                    pendingOperation = "GCD";
-                    tvExpression.setText("GCD(" + formatNumber(firstOperand) + ", ...)");
-                    isNewOp = true;
-                } catch (Exception ignored) {}
-            }
+            calculateCommaSeparatedOperation("GCD");
         });
 
         // LCM
         findViewById(R.id.btnLCM).setOnClickListener(v -> {
             triggerHaptic(v);
-            if (currentInput.toString().contains(",")) {
-                calculateCommaSeparatedOperation("LCM");
-            } else if (currentInput.length() > 0) {
-                try {
-                    firstOperand = Double.parseDouble(currentInput.toString());
-                    pendingOperation = "LCM";
-                    tvExpression.setText("LCM(" + formatNumber(firstOperand) + ", ...)");
-                    isNewOp = true;
-                } catch (Exception ignored) {}
-            }
+            calculateCommaSeparatedOperation("LCM");
         });
     }
 
@@ -263,66 +256,49 @@ public class MainActivity extends AppCompatActivity {
         // Clear (Backspace)
         findViewById(R.id.btnC).setOnClickListener(v -> {
             triggerHaptic(v);
-            if (currentInput.length() > 0) {
-                currentInput.deleteCharAt(currentInput.length() - 1);
-                tvResult.setText(currentInput.length() == 0 ? "0" : currentInput.toString());
+            if (fullExpression.length() > 0) {
+                fullExpression.deleteCharAt(fullExpression.length() - 1);
+                tvResult.setText(fullExpression.length() == 0 ? "0" : fullExpression.toString());
             }
         });
 
         // All Clear
         findViewById(R.id.btnAC).setOnClickListener(v -> {
             triggerHaptic(v);
-            currentInput.setLength(0);
-            firstOperand = 0.0;
-            pendingOperation = "";
-            isNewOp = true;
+            fullExpression.setLength(0);
+            isEvaluated = false;
             tvExpression.setText("");
             tvResult.setText("0");
         });
     }
 
-    private void calculateResult() {
-        if (pendingOperation.isEmpty() || currentInput.length() == 0) return;
+    private void calculateFullExpression() {
+        if (fullExpression.length() == 0) return;
 
         try {
-            double secondOperand = Double.parseDouble(currentInput.toString());
-            double result = 0.0;
-            String expressionText = formatNumber(firstOperand) + " " + pendingOperation + " " + formatNumber(secondOperand);
+            String exprStr = fullExpression.toString();
+            // Remove trailing operator if present
+            if (isOperator(exprStr.charAt(exprStr.length() - 1))) {
+                exprStr = exprStr.substring(0, exprStr.length() - 1);
+            }
 
-            tvExpression.setText(expressionText + " =");
+            double result = evaluateMathString(exprStr);
 
-            switch (pendingOperation) {
-                case "+":
-                    result = firstOperand + secondOperand;
-                    break;
-                case "-":
-                    result = firstOperand - secondOperand;
-                    break;
-                case "x":
-                    result = firstOperand * secondOperand;
-                    break;
-                case "/":
-                    if (secondOperand == 0) {
-                        tvResult.setText("Cannot divide by 0");
-                        isNewOp = true;
-                        return;
-                    }
-                    result = firstOperand / secondOperand;
-                    break;
-                case "GCD":
-                    result = computeGCD((long) firstOperand, (long) secondOperand);
-                    break;
-                case "LCM":
-                    result = computeLCM((long) firstOperand, (long) secondOperand);
-                    break;
+            if (Double.isNaN(result) || Double.isInfinite(result)) {
+                tvResult.setText("Cannot divide by 0");
+                isEvaluated = true;
+                return;
             }
 
             String formattedResult = formatNumber(result);
-            displayFormattedResult(result);
-            saveHistoryEntry(expressionText, formattedResult);
+            tvExpression.setText(exprStr + " =");
+            tvResult.setText(formattedResult);
 
-            pendingOperation = "";
-            isNewOp = true;
+            saveHistoryEntry(exprStr, formattedResult);
+
+            fullExpression.setLength(0);
+            fullExpression.append(formattedResult);
+            isEvaluated = true;
         } catch (Exception e) {
             tvResult.setText("Error");
         }
@@ -330,38 +306,111 @@ public class MainActivity extends AppCompatActivity {
 
     private void calculateCommaSeparatedOperation(String op) {
         try {
-            String[] parts = currentInput.toString().split(",");
-            if (parts.length == 2) {
-                long a = Long.parseLong(parts[0].trim());
-                long b = Long.parseLong(parts[1].trim());
-                String expr = op + "(" + a + ", " + b + ")";
+            String[] parts = fullExpression.toString().split(",");
+            if (parts.length >= 2) {
+                long runningResult = Long.parseLong(parts[0].trim());
+
+                for (int i = 1; i < parts.length; i++) {
+                    long nextNum = Long.parseLong(parts[i].trim());
+                    if (op.equals("GCD")) {
+                        runningResult = computeGCD(runningResult, nextNum);
+                    } else {
+                        runningResult = computeLCM(runningResult, nextNum);
+                    }
+                }
+
+                String expr = op + "(" + fullExpression.toString() + ")";
                 tvExpression.setText(expr + " =");
-                long res = op.equals("GCD") ? computeGCD(a, b) : computeLCM(a, b);
-                String formattedRes = String.valueOf(res);
+
+                String formattedRes = String.valueOf(runningResult);
                 tvResult.setText(formattedRes);
-                currentInput.setLength(0);
-                currentInput.append(res);
+                fullExpression.setLength(0);
+                fullExpression.append(runningResult);
+
                 saveHistoryEntry(expr, formattedRes);
-                isNewOp = true;
+                isEvaluated = true;
             }
         } catch (Exception e) {
             tvResult.setText("Error");
         }
     }
 
+    // Evaluates multi-number mathematical strings like "2+3+5" or "10+5x2" (BODMAS)
+    private double evaluateMathString(String expression) {
+        String sanitized = expression.replace("x", "*").replace(" ", "");
+        List<String> tokens = tokenize(sanitized);
+
+        Deque<Double> values = new ArrayDeque<>();
+        Deque<Character> ops = new ArrayDeque<>();
+
+        for (String token : tokens) {
+            if (token.length() == 1 && isMathOp(token.charAt(0))) {
+                char op = token.charAt(0);
+                while (!ops.isEmpty() && hasPrecedence(op, ops.peek())) {
+                    values.push(applyOp(ops.pop(), values.pop(), values.pop()));
+                }
+                ops.push(op);
+            } else {
+                values.push(Double.parseDouble(token));
+            }
+        }
+
+        while (!ops.isEmpty()) {
+            values.push(applyOp(ops.pop(), values.pop(), values.pop()));
+        }
+
+        return values.isEmpty() ? 0.0 : values.pop();
+    }
+
+    private List<String> tokenize(String s) {
+        List<String> tokens = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (isMathOp(c)) {
+                if (sb.length() > 0) {
+                    tokens.add(sb.toString());
+                    sb.setLength(0);
+                }
+                tokens.add(String.valueOf(c));
+            } else {
+                sb.append(c);
+            }
+        }
+        if (sb.length() > 0) tokens.add(sb.toString());
+        return tokens;
+    }
+
+    private boolean isMathOp(char c) {
+        return c == '+' || c == '-' || c == '*' || c == '/';
+    }
+
+    private boolean hasPrecedence(char op1, char op2) {
+        if ((op1 == '*' || op1 == '/') && (op2 == '+' || op2 == '-')) return false;
+        return true;
+    }
+
+    private double applyOp(char op, double b, double a) {
+        switch (op) {
+            case '+': return a + b;
+            case '-': return a - b;
+            case '*': return a * b;
+            case '/': return b == 0 ? Double.NaN : a / b;
+        }
+        return 0;
+    }
+
+    private boolean isOperator(char c) {
+        return c == '+' || c == '-' || c == 'x' || c == '/' || c == '*';
+    }
+
     private String formatNumber(double num) {
+        if (Double.isNaN(num) || Double.isInfinite(num)) return "Error";
         if (num == (long) num) {
             return String.valueOf((long) num);
         }
         DecimalFormat df = new DecimalFormat("#.##");
         return df.format(num);
-    }
-
-    private void displayFormattedResult(double result) {
-        String formatted = formatNumber(result);
-        tvResult.setText(formatted);
-        currentInput.setLength(0);
-        currentInput.append(formatted);
     }
 
     private boolean isPrime(long n) {
